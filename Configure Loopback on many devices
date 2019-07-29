@@ -1,0 +1,133 @@
+
+import threading
+from datetime import datetime
+from netmiko import ConnectHandler
+import re
+import time
+import os
+
+
+''' After SetConfig it exit config mode but after SendConfig Still in config mode ALSO u can send sho ip int br after SendConfig'''
+# num =['192.168.233.10','1.1.1.1']
+num =['192.168.233.10','192.168.233.20', '192.168.233.30','192.168.233.13','192.168.233.14']
+iosv_l2=[]
+
+for hosts in num :
+	ip=str(hosts)
+	iosv_l2.append({
+			'device_type': 'cisco_ios',
+			'ip':str(ip),
+			'username':'cisco',
+			'password':'cisco',
+			'global_delay_factor': 1
+			}
+	)
+FailedIps=[]
+
+
+def ping_is_successful(ping_result):
+	return True if '!' in ping_result else False
+
+
+def CheckDateOfCertifcation(date_output , CheckOn):
+	return True if str(CheckOn) in date_output else False
+
+
+
+def ConfigurationTest(x):
+	try:
+
+		net_connect = ConnectHandler(**iosv_l2[x])
+		print(net_connect.find_prompt())
+		# showVerion = net_connect.send_command('show version', delay_factor=2)
+		# regex_hostname = re.compile(r'(\S+)\suptime')
+		# hostname = regex_hostname.findall(showVerion)
+
+		def SpecialConfirmation (command , message , reply):
+			net_connect.config_mode()    #To enter config mode
+			net_connect.remote_conn.sendall(str(command)+'\n' )
+			time.sleep(3)
+			output = net_connect.remote_conn.recv(65535).decode('utf-8')
+			ReplyAppend=''
+			if str(message) in output:
+				for i in range(0,(len(reply))):
+					ReplyAppend+=str(reply[i])+'\n'
+				net_connect.remote_conn.sendall(ReplyAppend)
+				output = net_connect.remote_conn.recv(65535).decode('utf-8') 
+			print (output)
+			return output
+
+		# net_connect.config_mode()
+		# net_connect.exit_config_mode()
+
+		output=net_connect.send_command("sho ip int br")
+		print (output)
+		net_connect.config_mode()
+		# print (output)
+		SetCommands=['int loo0','ip add 1.1.1.1 255.255.255.255','exit']
+		SetCommands2=['no int loo0','exit']
+		CheckConfigMode=net_connect.check_config_mode()
+		print (str(CheckConfigMode)+" 1")
+
+		if (CheckConfigMode):
+			output=net_connect.send_config_set(SetCommands)
+		else :
+			net_connect.config_mode()
+			CheckConfigMode=net_connect.check_config_mode()
+			print (str(CheckConfigMode)+" 2")
+			output=net_connect.send_config_set(SetCommands)
+
+		output=net_connect.send_command("sho ip int br")
+		print (output)
+		CheckConfigMode=net_connect.check_config_mode()
+		print (str(CheckConfigMode)+" 3")
+		
+		# if (CheckConfigMode):
+		# 	output=net_connect.send_config_set(SetCommands2)
+		# else :
+		# 	net_connect.config_mode()
+		# 	CheckConfigMode=net_connect.check_config_mode()
+		# 	print (str(CheckConfigMode)+" 4")
+		# 	output=net_connect.send_config_set(SetCommands2)
+		
+		# CheckConfigMode=net_connect.check_config_mode()
+		# print (str(CheckConfigMode)+" 5")
+
+		output=net_connect.send_command("sho ip int br")
+		print (output)
+		
+		output=net_connect.send_command("sho run")
+
+		net_connect.disconnect()
+		print ('\n\n\n\n')
+	except Exception:
+		FailedIps.append(num[x])
+
+start_time = datetime.now()
+
+for x in range(0,len(num)):
+
+	try:
+		my_thread = threading.Thread(target=ConfigurationTest, args=(x,))
+		my_thread.start()
+
+
+	except Exception:
+		print ("\n Thread ERROR \n")
+
+
+main_thread = threading.currentThread()
+for some_thread in threading.enumerate():
+	if some_thread != main_thread:
+		print(some_thread)
+		some_thread.join()
+
+print("\nElapsed time: " + str(datetime.now() - start_time))
+
+
+print(FailedIps)
+
+
+
+
+
