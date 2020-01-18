@@ -31,8 +31,8 @@ num =[
 
 
 Device_Type=[ 'cisco_ios','cisco_ios_telnet']
-Username_Device=['Cisco','BMB-Supp','cisco','mahmeda']
-Passowrd_Device=['Cisco','L@F@rgeBmB2030','cisco','Simon_guevara@7999']
+Username_Device=['Cisco','Username1','Username2']
+Passowrd_Device=['Cisco','Password1','Password1']
 Global_Output=[]
 
 FailedIps=[]
