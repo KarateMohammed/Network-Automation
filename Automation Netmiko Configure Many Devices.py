@@ -62,7 +62,7 @@ num_New=[]
 
 
 ##################################################################
-						########## Get IPs from file ############
+						########## Get IPs from file in the root directory  ############
 ##################################################################
 with open('s.txt', 'r') as file:
 		num =file.read().splitlines()
@@ -106,7 +106,7 @@ def loginandcopy(hostname='10.231.0.84',uname='khyat',pwd='P@ssw0rd',sfile='a1.p
 
 
 ##############################################################################
-##################### The main Function of configuration ##################### 
+##################### The main Recursive Function of configuration ##################### 
 ##############################################################################
 
 def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num=0):
