@@ -1,5 +1,12 @@
 # ls | wc -l ## commad to see numbers of files on the directory
 # ssh 192.168.1.2 -o Kexalgorithms=+diffie-hellman-group1-sha1  ## to solve problem while connecting from client that have mismatch on Diffe
+## Or u can add this to
+    # KexAlgorithms diffie-hellman-group1-sha1,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha25>
+    # Ciphers 3des-cbc,blowfish-cbc,aes128-cbc,aes128-ctr,aes256-ctr
+##  to  nano /etc/ssh/ssh_config
+ # ssh-keygen -A
+ # service ssh restart
+
 import threading
 from datetime import datetime
 from netmiko import ConnectHandler
@@ -7,8 +14,13 @@ from netmiko import ssh_exception
 from netmiko.ssh_exception import (
 		NetMikoTimeoutException,
 		NetMikoAuthenticationException,
-SSHException
+		SSHException
 )
+
+from socket import error as socket_error
+
+# import errno
+
 import re
 import os
 import os.path
@@ -19,6 +31,7 @@ import time
 # from logging import log
 import scp
 from paramiko import SSHClient
+import paramiko
 import codecs
 import subprocess
 
@@ -37,12 +50,12 @@ TestPingIPs=[
 "192.168.233.13"
 ]
 
+# Device_Type=[ 'cisco_ios','cisco_ios_telnet']
 Device_Type=[ 'cisco_ios_telnet','cisco_ios']
-Passowrd_Device_Enable=["Test","cisco"]
-Username_Device=["test","cisco"]
-Passowrd_Device=["barkotel","cisco"]
+Passowrd_Device_Enable=["test2","cisco","Test"]
+Username_Device=["test2","cisco","test"]
+Passowrd_Device=["test2","cisco","barkotel"]
 
-Device_Type=[ 'cisco_ios_telnet','cisco_ios']
 
 # Username_Device=["cisco"]
 # Passowrd_Device=["cisco"]
@@ -58,6 +71,10 @@ count=0
 ConfigurationTest_Boolen =0
 num_New=[]
 
+Configuration_Output_ID2=''
+Configuration_Output_ID254=''
+Configuration_Router=""
+Configuration_Switch=""
 
 
 
@@ -116,10 +133,15 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 				return ConfigurationTest_Boolen==1
 
 # If increment of Num is out of range for User_Pass_Num and Device_Type_Num return 1
-		elif User_Pass_Num >= len(Username_Device)  or Device_Type_Num >= len (Device_Type) or Passowrd_Enable_Num>=len(Passowrd_Device_Enable) :
-				print ("Out Of Range For IP\t" + ip+"\n")
+		elif User_Pass_Num >= len(Username_Device)   :
+				print (f"Username Not in Range For IP\t{ip}\n")
 				return ConfigurationTest_Boolen==1
-
+		elif Device_Type_Num >= len (Device_Type) :
+				print (f"Connection type Not in Range For IP\t{ip}\n")
+				return ConfigurationTest_Boolen==1
+		elif Passowrd_Enable_Num>=len(Passowrd_Device_Enable) :
+				print (f"Enable Pass Not in Range For IP\t{ip}\n")
+				return ConfigurationTest_Boolen==1
 # If increment of Num is in range for User_Pass_Num and Device_Type_Num contune
 		else :
 
@@ -128,10 +150,10 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 						'ip':str(ip),
 						'username': Username_Device[User_Pass_Num],
 						'password': Passowrd_Device[User_Pass_Num],
-						'global_delay_factor': 15,
+						# 'global_delay_factor': 10,
 						# 'secret':'cs'
 						'secret':Passowrd_Device_Enable[Passowrd_Enable_Num],
-						'timeout':10
+						# 'timeout':5
 						 # 'session_timeout':5
 								}
 
@@ -206,8 +228,8 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 						print ("Terminal length \n")
 
 						Configuration_Output=net_connect.send_command_timing("termin len 0"+'\n\n' )
-						# Configuration_Output=net_connect.send_command_timing("show run "+'\n\n'  ,strip_prompt=False,strip_command=False)
-						# Configuration_Output+=net_connect.send_command_timing("show ip inte br "+'\n\n' ,strip_prompt=False,strip_command=False)
+						Configuration_Output=net_connect.send_command_timing("show run "+'\n\n'  ,strip_prompt=False,strip_command=False)
+						Configuration_Output+=net_connect.send_command_timing("show ip inte br "+'\n\n' ,strip_prompt=False,strip_command=False)
 						# Configuration_Switch=net_connect.send_command_timing("show fex  "+'\n\n' ,strip_prompt=False,strip_command=False)
 						# Configuration_Output+=net_connect.send_command_timing("show cdp neighbors detail "+'\n\n' ,strip_prompt=False,strip_command=False)
 						# Configuration_Switch+=net_connect.send_command_timing("show interfaces status  "+'\n\n' ,strip_prompt=False,strip_command=False)
@@ -216,10 +238,12 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 						# Configuration_Output+=net_connect.send_command_timing("show version "+'\n\n' ,strip_prompt=False,strip_command=False)
 						# Configuration_Output+=net_connect.send_command_timing("show cdp neighbors "+'\n\n' ,strip_prompt=False,strip_command=False)
 
+						################### for ARP ###############################################################
+					######################################################################
 
-						Configuration_Output_ID2=net_connect.send_command_timing("show ip arp vrf ID2 "+'\n\n'  ,strip_prompt=False,strip_command=False)
-						Configuration_Output_ID254=net_connect.send_command_timing("show ip arp vrf ID254 "+'\n\n'  ,strip_prompt=False,strip_command=False)
-
+						# Configuration_Output_ID2=net_connect.send_command_timing("show ip arp vrf ID2 "+'\n\n'  ,strip_prompt=False,strip_command=False)
+						# Configuration_Output_ID254=net_connect.send_command_timing("show ip arp vrf ID254 "+'\n\n'  ,strip_prompt=False,strip_command=False)
+					######################################################################
 
 						
 						# Configuration_Output=net_connect.send_command_timing("termin len 0"+'\n\n',delay_factor=5)
@@ -239,8 +263,7 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 
 						# Configuration_Output+=net_connect.send_command_timing("show ip inte br "+'\n\n',strip_prompt=False,strip_command=False)
 						
-						Configuration_Router=""
-						Configuration_Switch=""
+						print (f"This is after getting SHOW for IP\t{ip}")
 
 						Hostname_Output=net_connect.send_command("show run | i hostname"+'\n\n',delay_factor=5)
 
@@ -267,7 +290,7 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 
 						# check on each ip if it's in the mangement range or not and append it to new list if it's not exsit in the IPs list
 						for i in CDP_IPs_List :
-							if "172" in i :
+							if "192" in i :
 								# check on the IP to add it to the list
 								if i not in num :
 									num_New.append(i)
@@ -325,11 +348,9 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 						test+= Configuration_Output
 						test+=Configuration_Router
 						Configuration_Output_list.append(test)
+
 						Configuration_Output_ID2_list.append(Configuration_Output_ID2)
 						Configuration_Output_ID254_list.append(Configuration_Output_ID254)
-
-
-
 
 
 		############### SAVE Output IN FILES  #######################
@@ -338,9 +359,33 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 
 
 ################### Exception ###################################
-				except ( NetMikoAuthenticationException) :
+				except socket_error as socket_err :
+						################ Print error from msg from the main Lib  
+						print(f"Socket Error: \n{socket_err}\t for IP {ip}\n")
+						print ("Continue")
+						if '111' in f"Type {socket_err}" : 
+							Device_Type_Num+=1
+							if  Device_Type_Num >= len(Device_Type) :
+									FailedIps.append(ip+"   Socket or connection type Error")
+							return ConfigurationTest (ip ,Device_Type_Num ,User_Pass_Num ,Passowrd_Enable_Num)
+						if '113' in f"Type {socket_err}" :
+							FailedIps.append(ip+"   No route to the host")
+							return ConfigurationTest_Boolen==1
+						return ConfigurationTest_Boolen==1
+
+				except paramiko.ssh_exception.BadHostKeyException as badHostKeyException:
+						################ Print error from msg from the main Lib  
+						print(f"Unable to verify server's host key: \n{badHostKeyException}\n")
+
+				except paramiko.ssh_exception.NoValidConnectionsError as noValidConnectionsError:
+						################ Print error from msg from the main Lib  
+						print(f"no Valid Connections Error: \n{noValidConnectionsError}\n")
+
+				except ( NetMikoAuthenticationException) as  netmikoAuthenticationException:
 						# print ('Authentication Failure\t' + ip)
-						print (str (User_Pass_Num)+"\tAuthentication\t"+ip)
+						print (str (User_Pass_Num) +"   " +str(Username_Device[User_Pass_Num])+ " failed Authentication\t"+ip)
+						################ Print error from msg from the main Lib  
+						print(f"netmikoAuthenticationException : {netmikoAuthenticationException}\n")
 						User_Pass_Num+=1
 				# If it tried all users and pass and failed add it to failedIps
 						if User_Pass_Num >= len(Username_Device) :
@@ -349,31 +394,40 @@ def ConfigurationTest(ip,Device_Type_Num= 0,User_Pass_Num= 0,Passowrd_Enable_Num
 						#       print("this is Authentication  "+str(ip)+" Device_Type "+str(Device_Type[Device_Type_Num])+" Username_Device " +str(Username_Device[User_Pass_Num])+" Passowrd_Device " +str(Passowrd_Device[User_Pass_Num]))
 				# Recursive function
 						return ConfigurationTest (ip ,Device_Type_Num ,User_Pass_Num,Passowrd_Enable_Num )
-				except (ValueError):
-						print (str (Passowrd_Enable_Num)+"\tEnable Authentication\t"+ip)
-						Passowrd_Enable_Num+=1
-						if Passowrd_Enable_Num>=len(Passowrd_Device_Enable):
-								FailedIps.append(ip+"\tEnable Authentication Error ")
-						return ConfigurationTest (ip ,Device_Type_Num ,User_Pass_Num ,Passowrd_Enable_Num) 
-				except (NetMikoTimeoutException):
+				except (NetMikoTimeoutException) as netmikoTimeoutException:
 						# print ('Timeout  Failure\t' + ip)
 						print (str (Device_Type_Num)+"\tTimeoutException\t"+ip)
+						################ Print error from msg from the main Lib  
+						print(f"netmikoTimeoutException : \n{netmikoTimeoutException}\n")
 						Device_Type_Num+=1
 						if  Device_Type_Num >= len(Device_Type) :
 								FailedIps.append(ip+"   Timeout Error")
 						# if  Device_Type_Num < len(Device_Type) :
 						#       print("this is Timeout "+str(ip)+" Device_Type "+str(Device_Type[Device_Type_Num])+" Username_Device " +str(Username_Device[User_Pass_Num])+" Passowrd_Device " +str(Passowrd_Device[User_Pass_Num]))
 						return ConfigurationTest (ip ,Device_Type_Num ,User_Pass_Num ,Passowrd_Enable_Num)
-				except (SSHException):
+
+				except (paramiko.ssh_exception.SSHException) as sshException :
 						# print ('SSH  Failure\t' + ip)
-						print (str (Device_Type_Num)+"\tSSHException\t"+ip)
+						print (str (Device_Type_Num)+"\tSSHException\t"+ip +"\n")
+						################ Print error from msg from the main Lib  
+						print(f"Unable to establish SSH connection: \n{sshException}\t for IP {ip}\n")
 						Device_Type_Num+=1
 						if  Device_Type_Num >= len(Device_Type) :
 								FailedIps.append(ip+"   SSHException Error ")
 						# if  Device_Type_Num < len(Device_Type) :
 						#       print("this is SSHException "+str(ip)+" Device_Type "+str(Device_Type[Device_Type_Num])+" Username_Device " +str(Username_Device[User_Pass_Num])+" Passowrd_Device " +str(Passowrd_Device[User_Pass_Num]))
 						return ConfigurationTest (ip ,Device_Type_Num ,User_Pass_Num ,Passowrd_Enable_Num)
-				except (EOFError):
+
+				except (ValueError):
+						print (str (Passowrd_Enable_Num)+"   "+str(Passowrd_Device_Enable[Passowrd_Enable_Num]) +" Failed Enable Authentication\t"+ip)
+						Passowrd_Enable_Num+=1
+						if Passowrd_Enable_Num>=len(Passowrd_Device_Enable):
+								FailedIps.append(ip+"   Enable Authentication Error ")
+						return ConfigurationTest (ip ,Device_Type_Num ,User_Pass_Num ,Passowrd_Enable_Num) 
+
+				except (EOFError) as eof_Error:
+						################ Print error from msg from the main Lib  
+						print(f"eof_Error : \n{eof_Error}\n")
 						# print ('End of File wihle attempting device\t' +ip)
 						FailedIps.append(ip+"   EOFError")
 						# print("this is EOFError "+str(ip)+" Device_Type "+str(Device_Type[Device_Type_Num])+" Username_Device " +str(Username_Device[User_Pass_Num])+" Passowrd_Device " +str(Passowrd_Device[User_Pass_Num]))
@@ -446,24 +500,17 @@ for f in range (0, len(Hostname_Output_list)) :
 
 ####################################################################################################
 ###############     This for vrf ID2 arp #############################
-for f in range (0, len(Hostname_Output_list)) :
-		file1 = codecs.open(Hostname_Output_list[f]+"__ID2.txt", encoding='utf-8',mode="w+")
-		file1.write(Configuration_Output_ID2_list[f])
-		file1.close()
+# for f in range (0, len(Hostname_Output_list)) :
+# 		file1 = codecs.open(Hostname_Output_list[f]+"__ID2.txt", encoding='utf-8',mode="w+")
+# 		file1.write(Configuration_Output_ID2_list[f])
+# 		file1.close()
 
-
-		
-####################################################################################################
-###############     This for vrf ID254 arp #############################
-for f in range (0, len(Hostname_Output_list)) :
-		file1 = codecs.open(Hostname_Output_list[f]+"__ID254.txt", encoding='utf-8',mode="w+")
-		file1.write(Configuration_Output_ID254_list[f])
-		file1.close()
-
-
-
-
-
+# ####################################################################################################
+# ###############     This for vrf ID254 arp #############################
+# for f in range (0, len(Hostname_Output_list)) :
+# 		file1 = codecs.open(Hostname_Output_list[f]+"__ID254.txt", encoding='utf-8',mode="w+")
+# 		file1.write(Configuration_Output_ID254_list[f])
+# 		file1.close()
 
 
 #####################################################
